@@ -22,8 +22,8 @@ async function categoryBodyValidation(req,res,next){
             if(err.includes('"name" is not allowed to be empty')){
                 return message+='Name field is not allowed to be empty!\n';
             }
-            if(err.includes('"name" length must be at least 4 characters long')){
-                return message+='Name length must be at least 4 characters long!\n';
+            if(err.includes('"name" length must be at least 3 characters long')){
+                return message+='Category name length must be at least 3 characters long!\n';
             }else{
                 return message+=err+'\n';
             }
