@@ -7,7 +7,7 @@ async function getGames(req,res){
     try{
         const name=stripHtml(nameGame).result.trim().toLowerCase();
         const {rows:games}= await connection.query(`
-            SELECT games.*, categories.name as "CategoryName"
+            SELECT games.*, categories.name as "categoryName"
             FROM games 
             JOIN categories
             ON games."categoryId"=categories.id 

@@ -28,7 +28,7 @@ export async function gameBodyValidation(req,res,next){
             if(err.includes('"image" with value')){
                 return message+='Image must be a valid image URL! \n';
             }
-            if(err.includes('"categoryId" must be [3]')){
+            if(err.includes('"categoryId" must be ')){
                 return message+=`Category id chosen doesn't exist!\n`;
             }else{
                 return message+=err+'\n';
