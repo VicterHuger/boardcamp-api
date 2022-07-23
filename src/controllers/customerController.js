@@ -1,4 +1,6 @@
+import {stripHtml} from 'string-strip-html';
 import connection from "../dbStrategy/postergres.js";
+
 
 async function createCustomer(_req,res){
     try{
@@ -16,16 +18,10 @@ async function createCustomer(_req,res){
 }
 
 async function getCustomers(req,res){
-    const cpf=req.query.cpf;
+    const cpfUser=req.query.cpf || "";
     
     try{
-        if(!cpf){
-            const {rows:customers}=await connection.query('SELECT * FROM customers');
-            if(customers.length===0){
-            return res.sendStatus(204);
-            }
-            return res.status(200).send(customers);
-        }
+        const cpf=stripHtml(cpfUser).result.trim();
         const {rows:customers}= await connection.query('SELECT * FROM customers WHERE cpf LIKE $1',[`${cpf}%`]);
         if(customers.length===0) return res.sendStatus(204);
         return res.status(200).send(customers);

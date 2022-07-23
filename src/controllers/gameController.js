@@ -2,26 +2,19 @@ import connection from "../dbStrategy/postergres.js";
 import {stripHtml} from 'string-strip-html';
 
 async function getGames(req,res){
-    const nameGame=req.query.name;
+    const nameGame=req.query.name || "";
     
     try{
-        if(nameGame){
-            const name=stripHtml(nameGame).result.trim().toLowerCase();
-            const {rows:games}= await connection.query(`
+        const name=stripHtml(nameGame).result.trim().toLowerCase();
+        const {rows:games}= await connection.query(`
             SELECT games.*, categories.name as "CategoryName"
             FROM games 
             JOIN categories
             ON games."categoryId"=categories.id 
-            WHERE LOWER(games.name) LIKE $1`,[`${name}%`]);
-            return res.status(200).send(games);
-        }
-        const {rows:games}= await connection.query(`
-        SELECT games.*, categories.name as "CategoryName"
-        FROM games 
-        JOIN categories
-        ON games."categoryId"=categories.id `);
-        res.status(200).send(games);
-        
+            WHERE LOWER (games.name) LIKE $1`,[`${name}%`]
+        );
+        return res.status(200).send(games);
+
     }catch(err){
         console.log(err);
         res.sendStatus(500);
