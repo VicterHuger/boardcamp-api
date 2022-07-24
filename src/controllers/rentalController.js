@@ -6,7 +6,7 @@ async function creteRental(_req,res){
     const {pricePerDay}=res.locals;
     const {customerId, gameId, daysRented}=body;
     try{
-        const rentDate = dayjs('2022-07-15').format('YYYY-MM-DD');
+        const rentDate = dayjs().format('YYYY-MM-DD');
         const originalPrice=Number(daysRented)*Number(pricePerDay);
         const returnDate=null;
         const delayFee=null;
@@ -29,9 +29,6 @@ async function getRentals(_req,res){
     const {sqlParams}=res.locals;
     try{
         const {rows:rentalsRaw} = await connection.query(sqlQuery,sqlParams);
-        if(rentalsRaw.length===0){
-            return res.sendStatus(204);
-        }
         const rentals = prettyRentalsFormat(rentalsRaw);
         return res.status(200).send(rentals);
     }catch(err){

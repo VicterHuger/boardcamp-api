@@ -6,7 +6,8 @@ async function customerBodyValidation(req,res,next){
     const {body}=req;
 
     for (const key of Object.keys(body)){
-        body[key]=stripHtml(body[key]).result.trim();
+        const value=body[key]?.toString()|| '';
+        body[key]=stripHtml(value).result.trim();
     }
 
     const {error}=customerSchema.validate(body,{abortEarly:false});
@@ -50,12 +51,43 @@ async function customerBodyValidation(req,res,next){
         });
         return res.status(400).send(message);
     }
-   
-    const {rows:costumer}=await connection.query('SELECT * FROM customers WHERE cpf=$1',[body.cpf]);
-    if(costumer.length>0) return res.status(409).send('CPF already registred!');
-
     res.locals.body=body;
 
+    next();
+}
+
+async function validateCpfBodyCreate(_req,res,next){
+    const {body}=res.locals;
+    try{
+        const {rows:customer}=await connection.query('SELECT * FROM customers WHERE cpf=$1',[body.cpf]);
+        if(customer.length>0) return res.status(409).send('CPF already registred!');
+    }catch(err){
+        console.log(err);
+        return res.sendStatus(500);
+    }
+    next();
+}
+
+async function validateCpfBodyUpdate(_req,res,next){
+    const {body}=res.locals;
+    const {customer}=res.locals;
+    try{
+        if(customer.cpf===body.cpf){
+            return next();
+        }
+        const {rows:customers}= await connection.query(`
+        SELECT id 
+        FROM customers 
+        WHERE cpf =$1 `,
+        [body.cpf]);
+        if(customers.length>0){
+            return res.sendStatus(409);
+        }
+        
+    }catch(err){
+        console.log(err);
+        return res.sendStatus(500);
+    }
     next();
 }
 
@@ -77,7 +109,7 @@ async function validateIdParams(req,res,next){
         const {id}=req.params;
         const {rows:customer}= await connection.query('SELECT * FROM customers WHERE id=$1',[id]);
         if(customer.length===0) return res.status(404).send("There is no customer with this id, try another one!");
-        res.locals.customer=customer;
+        res.locals.customer=customer[0];
         next();
     }catch(err){
         console.log(err);
@@ -85,4 +117,4 @@ async function validateIdParams(req,res,next){
     }
 }
 
-export {customerBodyValidation,validateCpfQueryString,validateIdParams}
+export {customerBodyValidation,validateCpfQueryString,validateIdParams,validateCpfBodyCreate, validateCpfBodyUpdate}

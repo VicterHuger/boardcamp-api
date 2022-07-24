@@ -7,7 +7,8 @@ async function categoryBodyValidation(req,res,next){
     const body=req.body;
 
     for(const key of Object.keys(body) ){
-        body[key]=stripHtml(body[key]).result.trim();
+        const value=body[key]?.toString()|| '';
+        body[key]=stripHtml(value).result.trim();
     };
     
     const {error} =categorySchema.validate(body,{abortEarly:false});

@@ -23,7 +23,6 @@ async function getCustomers(req,res){
     try{
         const cpf=stripHtml(cpfUser).result.trim();
         const {rows:customers}= await connection.query('SELECT * FROM customers WHERE cpf LIKE $1',[`${cpf}%`]);
-        if(customers.length===0) return res.sendStatus(204);
         return res.status(200).send(customers);
         
     }catch(err){

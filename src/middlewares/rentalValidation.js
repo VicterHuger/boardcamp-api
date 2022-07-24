@@ -168,7 +168,8 @@ async function validateDeleteRental(req,res,next){
 
 
 function sanitizateParam(param){
-    return stripHtml(param).result.trim();
+    const newParam = param?.toString() || '';
+    return stripHtml(newParam).result.trim();
 }
 
 export {rentalBodyValidation,rentalQueryStringValidation,createQueryRentals,validateRentalReturn, validateDeleteRental};

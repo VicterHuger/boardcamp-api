@@ -7,7 +7,7 @@ async function gameSchema(){
         const idsArray= ids.map(id=>id.id);
         const gameSchemaObject=joi.object({
                 name: joi.string().min(3).required(),
-                image: joi.string().pattern(/^http[^?]*.(jpg|jpeg|gif|png|tiff|bmp)(\?(.*))?$/i).required(),
+                image: joi.string().pattern(/^http[^?]*.(jpg|jpeg|gif|png|tiff|bmp)(\?(.*))?$/i).uri().required(),
                 stockTotal: joi.number().positive().required(),
                 categoryId: joi.number().valid(...idsArray).required(),
                 pricePerDay: joi.number().positive().required(),

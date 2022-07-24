@@ -3,9 +3,6 @@ import connection from "../dbStrategy/postergres.js";
 async function getCategories(_req,res){
     try{
         const {rows:categories} = await connection.query('SELECT * FROM categories');
-        if(categories.length===0){
-            return res.sendStatus(204);
-        }
         return res.status(200).send(categories);
 
     }catch(error){

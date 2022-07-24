@@ -6,7 +6,8 @@ export async function gameBodyValidation(req,res,next){
     const {body}=req;
 
     for (const key of Object.keys(body)){
-        body[key]=stripHtml(body[key]).result.trim();
+        const value=body[key]?.toString()|| '';
+        body[key]=stripHtml(value).result.trim();
     }
     const gameSchemaObject= await gameSchema();
     
