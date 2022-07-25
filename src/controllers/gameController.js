@@ -3,6 +3,8 @@ import {stripHtml} from 'string-strip-html';
 
 async function getGames(req,res){
     const nameGame=req.query.name || "";
+    const offset=req.query.offset || 0;
+    const limit=req.query.limit || 1e10;
     
     try{
         const name=stripHtml(nameGame).result.trim().toLowerCase();
@@ -11,7 +13,8 @@ async function getGames(req,res){
             FROM games 
             JOIN categories
             ON games."categoryId"=categories.id 
-            WHERE LOWER (games.name) LIKE $1`,[`${name}%`]
+            WHERE LOWER (games.name) LIKE $1
+            LIMIT $2 OFFSET $3`,[`${name}%`,limit, offset]
         );
         return res.status(200).send(games);
 

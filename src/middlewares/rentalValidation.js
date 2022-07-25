@@ -61,7 +61,9 @@ async function rentalQueryStringValidation(req,res,next){
     next();
 }
 
-async function createQueryRentals(_req,res,next){
+async function createQueryRentals(req,res,next){
+    const offset=req.query.offset || 0;
+    const limit=req.query.limit || 1e10;
     try{
         const {customerId}=res.locals || "";
         const {gameId}=res.locals || "";
@@ -78,7 +80,9 @@ async function createQueryRentals(_req,res,next){
             ON r."gameId"=g.id
             JOIN categories ca
             ON g."categoryId"=ca.id
+            LIMIT $1 OFFSET $2
             `;
+            sqlParams=[limit, offset]
         }else if(!gameId && customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -90,8 +94,9 @@ async function createQueryRentals(_req,res,next){
             JOIN categories ca
             ON g."categoryId"=ca.id
             WHERE c.id=$1
+            LIMIT $2 OFFSET $3
             `;
-            sqlParams=[customerId];
+            sqlParams=[customerId,limit,offset];
         }else if(gameId && !customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -103,8 +108,9 @@ async function createQueryRentals(_req,res,next){
             JOIN categories ca
             ON g."categoryId"=ca.id
             WHERE g.id=$1
+            LIMIT $2 OFFSET $3
             `;
-            sqlParams=[gameId];
+            sqlParams=[gameId],limit,offset;
         }else if(gameId && customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -117,8 +123,9 @@ async function createQueryRentals(_req,res,next){
             ON g."categoryId"=ca.id
             WHERE g.id=$1 
             AND c.id=$2
+            LIMIT $3 OFFSET $4
             `;
-            sqlParams=[gameId,customerId];
+            sqlParams=[gameId,customerId,limit,offset];
         }
         res.locals.sqlQuery=sqlQuery || "";
         res.locals.sqlParams=sqlParams || null;

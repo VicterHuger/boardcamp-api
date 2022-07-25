@@ -1,8 +1,14 @@
 import connection from "../dbStrategy/postergres.js";
 
-async function getCategories(_req,res){
+async function getCategories(req,res){
+    const offset=req.query.offset || 0;
+    const limit=req.query.limit || 1e10;
     try{
-        const {rows:categories} = await connection.query('SELECT * FROM categories');
+        const {rows:categories} = await connection.query(
+            `SELECT * 
+            FROM categories
+            LIMIT $1 OFFSET $2`,
+            [limit,offset]);
         return res.status(200).send(categories);
 
     }catch(error){

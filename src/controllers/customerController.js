@@ -19,10 +19,16 @@ async function createCustomer(_req,res){
 
 async function getCustomers(req,res){
     const cpfUser=req.query.cpf || "";
+    const offset=req.query.offset || 0;
+    const limit=req.query.limit || 1e10;
     
     try{
         const cpf=stripHtml(cpfUser).result.trim();
-        const {rows:customers}= await connection.query('SELECT * FROM customers WHERE cpf LIKE $1',[`${cpf}%`]);
+        const {rows:customers}= await connection.query(`
+        SELECT * 
+        FROM customers 
+        WHERE cpf LIKE $1
+        LIMIT $2 OFFSET $3`,[`${cpf}%`,limit,offset]);
         return res.status(200).send(customers);
         
     }catch(err){
