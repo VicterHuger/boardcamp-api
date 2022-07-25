@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 import { stripHtml } from "string-strip-html";
 import connection from "../dbStrategy/postergres.js";
 import { rentalSchema } from "../schemas/rentalSchema.js";
@@ -62,11 +64,21 @@ async function rentalQueryStringValidation(req,res,next){
 }
 
 async function createQueryRentals(req,res,next){
+
+    dayjs.extend(customParseFormat);
+
     const offset=req.query.offset || 0;
     const limit=req.query.limit || 1e10;
     const column= req.query.order ? stripHtml(req.query.order).result.trim().split(' ')[0] : "id";
     const ordenation = req.query.desc==="true" ? "DESC" : "";
     const status = (req.query.status==='open' || req.query.status==='closed' )? stripHtml(req.query.status).result.trim() : null ;
+    const startDate= req.query.startDate ? stripHtml(req.query.startDate).result.trim() : null;
+    
+
+    if(startDate && !dayjs(startDate,'YYYY-MM-DD',true).isValid()){
+        return res.status(400).send('Invalid Date!')
+    }
+
     try{
         const {customerId}=res.locals || "";
         const {gameId}=res.locals || "";
@@ -85,15 +97,18 @@ async function createQueryRentals(req,res,next){
             JOIN categories ca
             ON g."categoryId"=ca.id
             WHERE 
-            (r."returnDate" IS NULL AND $1='open')
+           ( (r."rentDate" >= $1 AND $1 IS NOT NULL) OR (r.id>0 AND $1 IS NULL) )
+            AND(
+            (r."returnDate" IS NULL AND $2='open')
             OR
-            (r."returnDate" IS NOT NULL AND $1='closed')
+            (r."returnDate" IS NOT NULL AND $2='closed')
             OR
-            (r.id > 0 AND ($1 IS NULL OR  $1 NOT IN ('closed','open')) )
+            (r.id > 0 AND ($2 IS NULL OR  $2 NOT IN ('closed','open')))
+            )
             ORDER BY ${column} ${ordenation}
-            LIMIT $2 OFFSET $3
+            LIMIT $3 OFFSET $4
             `;
-            sqlParams=[status, limit, offset]
+            sqlParams=[startDate,status, limit, offset]
         }else if(!gameId && customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -106,16 +121,18 @@ async function createQueryRentals(req,res,next){
             ON g."categoryId"=ca.id
             WHERE (c.id=$1) 
             AND (
-            (r."returnDate" IS NULL AND $2='open')
+            ( (r."rentDate" >= $2 AND $2 IS NOT NULL) OR (r.id>0 AND $2 IS NULL) ) )
+            AND(
+            (r."returnDate" IS NULL AND $3='open')
             OR
-            (r."returnDate" IS NOT NULL AND $2='closed')
+            (r."returnDate" IS NOT NULL AND $3='closed')
             OR
-            (r.id > 0 AND ($2 IS NULL OR  $2 NOT IN ('closed','open')))
+            (r.id > 0 AND ($3 IS NULL OR  $3 NOT IN ('closed','open')))
             )
             ORDER BY ${column} ${ordenation}
-            LIMIT $3 OFFSET $4
+            LIMIT $4 OFFSET $5
             `;
-            sqlParams=[customerId, status, limit,offset];
+            sqlParams=[customerId, startDate, status, limit,offset];
         }else if(gameId && !customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -128,16 +145,18 @@ async function createQueryRentals(req,res,next){
             ON g."categoryId"=ca.id
             WHERE (g.id=$1)
             AND (
-                (r."returnDate" IS NULL AND $2='open')
+                ( (r."rentDate" >= $2 AND $2 IS NOT NULL) OR (r.id>0 AND $2 IS NULL) ) )
+            AND (
+                (r."returnDate" IS NULL AND $3='open')
                 OR
-                (r."returnDate" IS NOT NULL AND $2='closed')
+                (r."returnDate" IS NOT NULL AND $3='closed')
                 OR
-                (r.id > 0 AND ($2 IS NULL OR  $2 NOT IN ('closed','open')))
+                (r.id > 0 AND ($3 IS NULL OR  $3 NOT IN ('closed','open')))
             )
             ORDER BY ${column} ${ordenation}
-            LIMIT $3 OFFSET $4
+            LIMIT $4 OFFSET $5
             `;
-            sqlParams=[gameId,status, limit,offset];
+            sqlParams=[gameId, startDate ,status, limit,offset];
         }else if(gameId && customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -151,16 +170,18 @@ async function createQueryRentals(req,res,next){
             WHERE (g.id=$1) 
             AND (c.id=$2)
             AND (
-                (r."returnDate" IS NULL AND $3='open')
+                ( (r."rentDate" >= $3 AND $3 IS NOT NULL) OR (r.id>0 AND $3 IS NULL) ) )
+            AND (
+                (r."returnDate" IS NULL AND $4='open')
                 OR
-                (r."returnDate" IS NOT NULL AND $3='closed')
+                (r."returnDate" IS NOT NULL AND $4='closed')
                 OR
-                (r.id > 0 AND ($3 IS NULL OR  $3 NOT IN ('closed','open')))
+                (r.id > 0 AND ($4 IS NULL OR  $4 NOT IN ('closed','open')))
             )
             ORDER BY ${column} ${ordenation}
-            LIMIT $4 OFFSET $5
+            LIMIT $5 OFFSET $6
             `;
-            sqlParams=[gameId, customerId, status, limit, offset];
+            sqlParams=[gameId, customerId, startDate , status, limit, offset];
         }
         res.locals.sqlQuery=sqlQuery || "";
         res.locals.sqlParams=sqlParams || null;
