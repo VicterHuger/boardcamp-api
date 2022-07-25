@@ -64,6 +64,8 @@ async function rentalQueryStringValidation(req,res,next){
 async function createQueryRentals(req,res,next){
     const offset=req.query.offset || 0;
     const limit=req.query.limit || 1e10;
+    const column= req.query.order ? stripHtml(req.query.order).result.trim().split(' ')[0] : "id";
+    const ordenation = req.query.desc==="true" ? "DESC" : "";
     try{
         const {customerId}=res.locals || "";
         const {gameId}=res.locals || "";
@@ -80,6 +82,7 @@ async function createQueryRentals(req,res,next){
             ON r."gameId"=g.id
             JOIN categories ca
             ON g."categoryId"=ca.id
+            ORDER BY ${column} ${ordenation}
             LIMIT $1 OFFSET $2
             `;
             sqlParams=[limit, offset]
@@ -94,9 +97,10 @@ async function createQueryRentals(req,res,next){
             JOIN categories ca
             ON g."categoryId"=ca.id
             WHERE c.id=$1
+            ORDER BY ${column} ${ordenation}
             LIMIT $2 OFFSET $3
             `;
-            sqlParams=[customerId,limit,offset];
+            sqlParams=[customerId, limit,offset];
         }else if(gameId && !customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -108,9 +112,10 @@ async function createQueryRentals(req,res,next){
             JOIN categories ca
             ON g."categoryId"=ca.id
             WHERE g.id=$1
+            ORDER BY ${column} ${ordenation}
             LIMIT $2 OFFSET $3
             `;
-            sqlParams=[gameId],limit,offset;
+            sqlParams=[gameId,limit,offset];
         }else if(gameId && customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -123,9 +128,10 @@ async function createQueryRentals(req,res,next){
             ON g."categoryId"=ca.id
             WHERE g.id=$1 
             AND c.id=$2
+            ORDER BY ${column} ${ordenation}
             LIMIT $3 OFFSET $4
             `;
-            sqlParams=[gameId,customerId,limit,offset];
+            sqlParams=[gameId, customerId, limit, offset];
         }
         res.locals.sqlQuery=sqlQuery || "";
         res.locals.sqlParams=sqlParams || null;

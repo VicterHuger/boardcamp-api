@@ -21,14 +21,18 @@ async function getCustomers(req,res){
     const cpfUser=req.query.cpf || "";
     const offset=req.query.offset || 0;
     const limit=req.query.limit || 1e10;
+    const column= req.query.order ? stripHtml(req.query.order).result.trim().split(' ')[0] : "id";
+    const ordenation = req.query.desc==="true" ? "DESC" : "";
     
     try{
         const cpf=stripHtml(cpfUser).result.trim();
-        const {rows:customers}= await connection.query(`
+        const customerQuery=`
         SELECT * 
         FROM customers 
         WHERE cpf LIKE $1
-        LIMIT $2 OFFSET $3`,[`${cpf}%`,limit,offset]);
+        ORDER BY ${column} ${ordenation}
+        LIMIT $2 OFFSET $3`;
+        const {rows:customers}= await connection.query(customerQuery,[`${cpf}%`, limit, offset]);
         return res.status(200).send(customers);
         
     }catch(err){

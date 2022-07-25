@@ -32,6 +32,7 @@ async function getRentals(_req,res){
         const rentals = prettyRentalsFormat(rentalsRaw);
         return res.status(200).send(rentals);
     }catch(err){
+        console.log('aqui')
         console.error(err);
         res.sendStatus(500);
     }

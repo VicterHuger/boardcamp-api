@@ -5,6 +5,8 @@ async function getGames(req,res){
     const nameGame=req.query.name || "";
     const offset=req.query.offset || 0;
     const limit=req.query.limit || 1e10;
+    const column= req.query.order ? stripHtml(req.query.order).result.trim().split(' ')[0] : "id";
+    const ordenation = req.query.desc==="true" ? "DESC" : "";
     
     try{
         const name=stripHtml(nameGame).result.trim().toLowerCase();
@@ -14,7 +16,8 @@ async function getGames(req,res){
             JOIN categories
             ON games."categoryId"=categories.id 
             WHERE LOWER (games.name) LIKE $1
-            LIMIT $2 OFFSET $3`,[`${name}%`,limit, offset]
+            ORDER BY ${column} ${ordenation}
+            LIMIT $2 OFFSET $3`,[`${name}%`, limit, offset]
         );
         return res.status(200).send(games);
 
