@@ -66,11 +66,13 @@ async function createQueryRentals(req,res,next){
     const limit=req.query.limit || 1e10;
     const column= req.query.order ? stripHtml(req.query.order).result.trim().split(' ')[0] : "id";
     const ordenation = req.query.desc==="true" ? "DESC" : "";
+    const status = (req.query.status==='open' || req.query.status==='closed' )? stripHtml(req.query.status).result.trim() : null ;
     try{
         const {customerId}=res.locals || "";
         const {gameId}=res.locals || "";
         let sqlQuery;
         let sqlParams;
+
 
         if(!gameId && !customerId){
             sqlQuery=`
@@ -82,10 +84,16 @@ async function createQueryRentals(req,res,next){
             ON r."gameId"=g.id
             JOIN categories ca
             ON g."categoryId"=ca.id
+            WHERE 
+            (r."returnDate" IS NULL AND $1='open')
+            OR
+            (r."returnDate" IS NOT NULL AND $1='closed')
+            OR
+            (r.id > 0 AND ($1 IS NULL OR  $1 NOT IN ('closed','open')) )
             ORDER BY ${column} ${ordenation}
-            LIMIT $1 OFFSET $2
+            LIMIT $2 OFFSET $3
             `;
-            sqlParams=[limit, offset]
+            sqlParams=[status, limit, offset]
         }else if(!gameId && customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -96,11 +104,18 @@ async function createQueryRentals(req,res,next){
             ON r."gameId"=g.id
             JOIN categories ca
             ON g."categoryId"=ca.id
-            WHERE c.id=$1
+            WHERE (c.id=$1) 
+            AND (
+            (r."returnDate" IS NULL AND $2='open')
+            OR
+            (r."returnDate" IS NOT NULL AND $2='closed')
+            OR
+            (r.id > 0 AND ($2 IS NULL OR  $2 NOT IN ('closed','open')))
+            )
             ORDER BY ${column} ${ordenation}
-            LIMIT $2 OFFSET $3
+            LIMIT $3 OFFSET $4
             `;
-            sqlParams=[customerId, limit,offset];
+            sqlParams=[customerId, status, limit,offset];
         }else if(gameId && !customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -111,11 +126,18 @@ async function createQueryRentals(req,res,next){
             ON r."gameId"=g.id
             JOIN categories ca
             ON g."categoryId"=ca.id
-            WHERE g.id=$1
+            WHERE (g.id=$1)
+            AND (
+                (r."returnDate" IS NULL AND $2='open')
+                OR
+                (r."returnDate" IS NOT NULL AND $2='closed')
+                OR
+                (r.id > 0 AND ($2 IS NULL OR  $2 NOT IN ('closed','open')))
+            )
             ORDER BY ${column} ${ordenation}
-            LIMIT $2 OFFSET $3
+            LIMIT $3 OFFSET $4
             `;
-            sqlParams=[gameId,limit,offset];
+            sqlParams=[gameId,status, limit,offset];
         }else if(gameId && customerId){
             sqlQuery=`
             SELECT r.*, c.id as "cId", c.name as "cName", g.id as "gId", g.name as "gName", g."categoryId", ca.name as "categoryName"  
@@ -126,12 +148,19 @@ async function createQueryRentals(req,res,next){
             ON r."gameId"=g.id
             JOIN categories ca
             ON g."categoryId"=ca.id
-            WHERE g.id=$1 
-            AND c.id=$2
+            WHERE (g.id=$1) 
+            AND (c.id=$2)
+            AND (
+                (r."returnDate" IS NULL AND $3='open')
+                OR
+                (r."returnDate" IS NOT NULL AND $3='closed')
+                OR
+                (r.id > 0 AND ($3 IS NULL OR  $3 NOT IN ('closed','open')))
+            )
             ORDER BY ${column} ${ordenation}
-            LIMIT $3 OFFSET $4
+            LIMIT $4 OFFSET $5
             `;
-            sqlParams=[gameId, customerId, limit, offset];
+            sqlParams=[gameId, customerId, status, limit, offset];
         }
         res.locals.sqlQuery=sqlQuery || "";
         res.locals.sqlParams=sqlParams || null;
